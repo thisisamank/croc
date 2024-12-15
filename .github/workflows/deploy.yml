@@ -30,7 +30,7 @@ jobs:
         id: docker_meta
         uses: docker/metadata-action@v5
         with:
-          images: schollz/croc
+          images: thisisamank/croc
           # generate Docker tags based on the following events/attributes
           tags: |
             type=ref,event=branch
