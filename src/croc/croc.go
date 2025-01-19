@@ -1267,9 +1267,9 @@ func (c *Client) processMessageFileInfo(m message.Message) (done bool, err error
 		}
 	}
 
-	fmt.Printf("thisisamank: total files %d\n", len(c.FilesToTransfer))
+	fmt.Fprintf(os.Stderr, "thisisamank: total files %d\n", len(c.FilesToTransfer))
 	for _, fileInfo := range c.FilesToTransfer {
-		fmt.Printf("thisisamank: fileName %s and size %s", fileInfo.Name, utils.ByteCountDecimal(fileInfo.Size))
+		fmt.Fprintf(os.Stderr, "thisisamank: fileName %s and size %s", fileInfo.Name, utils.ByteCountDecimal(fileInfo.Size))
 	}
 
 	c.TotalNumberOfContents = 0
