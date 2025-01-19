@@ -36,7 +36,7 @@ func Run() (err error) {
 	app := cli.NewApp()
 	app.Name = "croc"
 	if Version == "" {
-		Version = "v10.1.3"
+		Version = "v10.2.1"
 	}
 	app.Version = Version
 	app.Compiled = time.Now()
@@ -78,6 +78,7 @@ func Run() (err error) {
 				&cli.IntFlag{Name: "port", Value: 9009, Usage: "base port for the relay"},
 				&cli.IntFlag{Name: "transfers", Value: 4, Usage: "number of ports to use for transfers"},
 				&cli.BoolFlag{Name: "qrcode", Aliases: []string{"qr"}, Usage: "show receive code as a qrcode"},
+				&cli.StringFlag{Name: "exclude", Value: "", Usage: "exclude files if they contain any of the comma separated strings"},
 			},
 			HelpName: "croc send",
 			Action:   send,
@@ -274,6 +275,13 @@ func send(c *cli.Context) (err error) {
 	if transfersParam == 0 {
 		transfersParam = 4
 	}
+	excludeStrings := []string{}
+	for _, v := range strings.Split(c.String("exclude"), ",") {
+		v = strings.ToLower(strings.TrimSpace(v))
+		if v != "" {
+			excludeStrings = append(excludeStrings, v)
+		}
+	}
 
 	ports := make([]string, transfersParam+1)
 	for i := 0; i <= transfersParam; i++ {
@@ -305,6 +313,7 @@ func send(c *cli.Context) (err error) {
 		GitIgnore:        c.Bool("git"),
 		ShowQrCode:       c.Bool("qrcode"),
 		MulticastAddress: c.String("multicast"),
+		Exclude:          excludeStrings,
 	}
 	if crocOptions.RelayAddress != models.DEFAULT_RELAY {
 		crocOptions.RelayAddress6 = ""
@@ -418,9 +427,48 @@ Or you can go back to the classic croc behavior by enabling classic mode:
 		// generate code phrase
 		crocOptions.SharedSecret = utils.GetRandomName()
 	}
-	minimalFileInfos, emptyFoldersToTransfer, totalNumberFolders, err := croc.GetFilesInfo(fnames, crocOptions.ZipFolder, crocOptions.GitIgnore)
+	minimalFileInfos, emptyFoldersToTransfer, totalNumberFolders, err := croc.GetFilesInfo(fnames, crocOptions.ZipFolder, crocOptions.GitIgnore, crocOptions.Exclude)
 	if err != nil {
 		return
+	}
+	if len(crocOptions.Exclude) > 0 {
+		minimalFileInfosInclude := []croc.FileInfo{}
+		emptyFoldersToTransferInclude := []croc.FileInfo{}
+		for _, f := range minimalFileInfos {
+			exclude := false
+			for _, exclusion := range crocOptions.Exclude {
+				if strings.Contains(path.Join(strings.ToLower(f.FolderRemote), strings.ToLower(f.Name)), exclusion) {
+					exclude = true
+					break
+				}
+			}
+			if !exclude {
+				minimalFileInfosInclude = append(minimalFileInfosInclude, f)
+			}
+		}
+		for _, f := range emptyFoldersToTransfer {
+			exclude := false
+			for _, exclusion := range crocOptions.Exclude {
+				if strings.Contains(path.Join(strings.ToLower(f.FolderRemote), strings.ToLower(f.Name)), exclusion) {
+					exclude = true
+					break
+				}
+			}
+			if !exclude {
+				emptyFoldersToTransferInclude = append(emptyFoldersToTransferInclude, f)
+			}
+		}
+		totalNumberFolders = 0
+		folderMap := make(map[string]bool)
+		for _, f := range minimalFileInfosInclude {
+			folderMap[f.FolderRemote] = true
+		}
+		for _, f := range emptyFoldersToTransferInclude {
+			folderMap[f.FolderRemote] = true
+		}
+		totalNumberFolders = len(folderMap)
+		minimalFileInfos = minimalFileInfosInclude
+		emptyFoldersToTransfer = emptyFoldersToTransferInclude
 	}
 
 	cr, err := croc.New(crocOptions)

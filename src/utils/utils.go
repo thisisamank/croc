@@ -22,7 +22,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/cespare/xxhash"
+	"github.com/cespare/xxhash/v2"
 	"github.com/kalafut/imohash"
 	"github.com/minio/highwayhash"
 	"github.com/schollz/croc/v10/src/mnemonicode"
@@ -138,6 +138,7 @@ func HighwayHashFile(fname string, doShowProgress bool) (hashHighway []byte, err
 			progressbar.OptionShowBytes(true),
 			progressbar.OptionSetDescription(fmt.Sprintf("Hashing %s", fnameShort)),
 			progressbar.OptionClearOnFinish(),
+			progressbar.OptionFullWidth(),
 		)
 		if _, err = io.Copy(io.MultiWriter(h, bar), f); err != nil {
 			return
@@ -172,6 +173,7 @@ func MD5HashFile(fname string, doShowProgress bool) (hash256 []byte, err error) 
 			progressbar.OptionShowBytes(true),
 			progressbar.OptionSetDescription(fmt.Sprintf("Hashing %s", fnameShort)),
 			progressbar.OptionClearOnFinish(),
+			progressbar.OptionFullWidth(),
 		)
 		if _, err = io.Copy(io.MultiWriter(h, bar), f); err != nil {
 			return
@@ -223,6 +225,7 @@ func XXHashFile(fname string, doShowProgress bool) (hash256 []byte, err error) {
 			progressbar.OptionShowBytes(true),
 			progressbar.OptionSetDescription(fmt.Sprintf("Hashing %s", fnameShort)),
 			progressbar.OptionClearOnFinish(),
+			progressbar.OptionFullWidth(),
 		)
 		if _, err = io.Copy(io.MultiWriter(h, bar), f); err != nil {
 			return

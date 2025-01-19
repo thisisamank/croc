@@ -87,6 +87,7 @@ type Options struct {
 	GitIgnore        bool
 	MulticastAddress string
 	ShowQrCode       bool
+	Exclude          []string
 }
 
 type SimpleMessage struct {
@@ -312,9 +313,18 @@ func isChild(parentPath, childPath string) bool {
 	return !strings.HasPrefix(relPath, "..")
 }
 
+func recursiveFiles(path string) (paths []string, err error) {
+	paths = []string{strings.ToLower(path)}
+	err = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		paths = append(paths, strings.ToLower(path))
+		return nil
+	})
+	return
+}
+
 // This function retrieves the important file information
 // for every file that will be transferred
-func GetFilesInfo(fnames []string, zipfolder bool, ignoreGit bool) (filesInfo []FileInfo, emptyFolders []FileInfo, totalNumberFolders int, err error) {
+func GetFilesInfo(fnames []string, zipfolder bool, ignoreGit bool, exclusions []string) (filesInfo []FileInfo, emptyFolders []FileInfo, totalNumberFolders int, err error) {
 	// fnames: the relative/absolute paths of files/folders that will be transferred
 	totalNumberFolders = 0
 	var paths []string
